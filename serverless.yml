@@ -1,17 +1,7 @@
-# Welcome to Serverless!
-#
-# This file is the main config file for your service.
-# It's very minimal at this point and uses default values.
-# You can always add more config options for more control.
-# We've included some commented out config examples here.
-# Just uncomment any of them to get that config option.
-#
-# For full config options, check the docs:
-#    docs.serverless.com
-#
-# Happy Coding!
+plugins:
+  - serverless-deployment-bucket
 
-service: sls-go
+service: "poc-stepf"
 # app and org for use with dashboard.serverless.com
 #app: your-app-name
 #org: your-org-name
@@ -23,6 +13,13 @@ frameworkVersion: '3'
 provider:
   name: aws
   runtime: go1.x
+  deploymentBucket:
+    name: serverless-deploy-20220509-poc-stepf
+    serverSideEncryption: AES256
+  region: us-east-1
+  environment:
+    ENV_VAR: test
+  lambdaHashingVersion: 20201221
 
 # you can overwrite defaults here
 #  stage: dev
@@ -55,19 +52,88 @@ package:
     - '!./**'
     - ./bin/**
 
+custom:
+  functionPrefix: poc-stepf
+
 functions:
   hello:
+    role: lambdaRole
     handler: bin/hello
-    events:
-      - httpApi:
-          path: /hello
-          method: get
   world:
+    role: lambdaRole
     handler: bin/world
-    events:
-      - httpApi:
-          path: /world
-          method: get
+
+resources:
+  Resources:
+    lambdaRole:
+      Type: AWS::IAM::Role
+      Properties:
+        Path: /
+        RoleName: poc-stepf-lambda-role-${opt:stage} # required if you want to use 'serverless deploy --function' later on
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action: sts:AssumeRole
+        Policies:
+          - PolicyName: lambdaPolicy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow # note that these rights are given in the default policy and are required if you want logs out of your lambda(s)
+                  Action:
+                    - logs:CreateLogGroup
+                    - logs:CreateLogStream
+                    - logs:PutLogEvents
+                  Resource:
+                    - 'Fn::Join':
+                        - ':'
+                        -
+                          - 'arn:aws:logs'
+                          - Ref: 'AWS::Region'
+                          - Ref: 'AWS::AccountId'
+                          - 'log-group:/aws/lambda/*:*:*'
+    stateMachineRole:
+      Type: AWS::IAM::Role
+      Properties:
+        Path: /
+        RoleName: poc-stepf-statemachine-role-${opt:stage} # required if you want to use 'serverless deploy --function' later on
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - states.amazonaws.com
+              Action: sts:AssumeRole
+        Policies:
+          - PolicyName: lambdaPolicy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow # note that these rights are given in the default policy and are required if you want logs out of your lambda(s)
+                  Action:
+                    - 'lambda:InvokeFunction'
+                  Resource:
+                    - 'Fn::Join':
+                        - ':'
+                        - - 'arn:aws:lambda'
+                          - Ref: 'AWS::Region'
+                          - Ref: 'AWS::AccountId'
+                          - 'function:poc-stepf-${opt:stage}-hello'
+                    - 'Fn::Join':
+                        - ':'
+                        - - 'arn:aws:lambda'
+                          - Ref: 'AWS::Region'
+                          - Ref: 'AWS::AccountId'
+                          - 'function:poc-stepf-${opt:stage}-world'
+
+
+
+
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
 #    Check the event documentation for details

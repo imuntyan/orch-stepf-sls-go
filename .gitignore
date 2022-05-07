@@ -23,3 +23,5 @@ vendor
 # Intellij Idea project files
 .idea
 *.iml
+
+node_modules

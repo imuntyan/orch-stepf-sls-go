@@ -1,0 +1,11 @@
+version: 3
+
+vars:
+  ROOT_DIR: ../../..
+
+tasks:
+  build:
+    cmds:
+      - find lambda/go -type f -name Taskfile.yml -depth 2 | xargs -n1 dirname | ROOT_DIR=`pwd` xargs -n1 -I DIR task -d DIR build
+
+# explicit list of go lambdas / directories, drop a .lambda file in to mark directory

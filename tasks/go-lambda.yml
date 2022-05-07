@@ -1,0 +1,31 @@
+version: '3'
+
+vars:
+  DIST: infrastructure/terraform/dist
+  LAMBDA_DIST: "{{.DIST}}/lambda"
+
+tasks:
+  build:
+    vars:
+      PACKAGE_NAME: "{{.NAME}}-lambda"
+      SOURCE_DIR: "go/{{.NAME}}"
+    cmds:
+      - mkdir -p "{{.ROOT_DIR}}/bin"
+      - go build -o "{{.ROOT_DIR}}/bin/{{.NAME}}" main.go
+#      - task: package
+#        vars:
+#          NAME: "{{.NAME}}"
+#          SOURCE_DIR: "go/builds/{{.PACKAGE_NAME}}"
+    preconditions:
+    - test -d {{.ROOT_DIR}}
+#    - test "{{.STAGE}}" != ""
+
+
+
+  package:
+    vars:
+      TARGET_ZIP: "{{.LAMBDA_DIST}}/{{.NAME}}-{{.STAGE}}.zip"
+    cmds:
+      - mkdir -p "{{.LAMBDA_DIST}}"
+      - cd {{.SOURCE_DIR}} && zip -yrq ../../../{{.TARGET_ZIP}} handler
+

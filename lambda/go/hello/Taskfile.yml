@@ -1,0 +1,13 @@
+version: 3
+
+vars:
+  NAME: hello
+
+includes:
+  go-lambda:
+    taskfile: ../../../tasks/go-lambda.yml
+
+tasks:
+  build:
+    cmds:
+      - task: go-lambda:build
