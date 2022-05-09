@@ -11,7 +11,7 @@ tasks:
       SOURCE_DIR: "go/{{.NAME}}"
     cmds:
       - mkdir -p "{{.ROOT_DIR}}/bin"
-      - go build -o "{{.ROOT_DIR}}/bin/{{.NAME}}" main.go
+      - GOOS=linux go build -o "{{.ROOT_DIR}}/bin/{{.NAME}}" main.go
 #      - task: package
 #        vars:
 #          NAME: "{{.NAME}}"

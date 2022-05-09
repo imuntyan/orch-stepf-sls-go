@@ -24,4 +24,11 @@ vendor
 .idea
 *.iml
 
+# Terraform
+terraform/.terraform
+terraform/.terraform.*
+terraform/terraform.*
+
+.DS_Store
+
 node_modules
