@@ -1,10 +1,13 @@
 version: 3
 
+dotenv: ["{{.ROOT_DIR}}/tasks/.env", "{{.ROOT_DIR}}/tasks/.env.{{.ENV}}"]
+
 vars:
   NAME: worker
+  PREFIX: poc_igor_orch_stepf
 
 includes:
-  go-lambda:
+  go-ecs:
     taskfile: ../../../tasks/go-ecs.yml
 
 tasks:

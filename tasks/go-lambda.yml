@@ -3,7 +3,7 @@ version: '3'
 tasks:
   build:
     vars:
-      OUTPUT_DIR: "{{.ROOT_DIR}}/bin/{{.NAME}}"
+      OUTPUT_DIR: "{{.ROOT_DIR}}/bin/lambda/{{.NAME}}"
     cmds:
       - mkdir -p "{{.OUTPUT_DIR}}"
       - GOOS=linux GOARCH=amd64 go build -o "{{.OUTPUT_DIR}}/handler" main.go

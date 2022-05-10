@@ -41,12 +41,12 @@ resource "aws_iam_role_policy" "lambda_policy" {
 }
 
 resource "aws_lambda_function" "worker" {
-  filename      = "../bin/worker/handler.zip"
+  filename      = "../bin/lambda/worker/handler.zip"
   function_name = "${var.prefix}_worker"
   role          = aws_iam_role.lambda_role.arn
   handler       = "handler"
 
-  source_code_hash = filebase64sha256("../bin/worker/handler.zip")
+  source_code_hash = filebase64sha256("../bin/lambda/worker/handler.zip")
 
   runtime = "go1.x"
 

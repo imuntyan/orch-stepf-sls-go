@@ -1,11 +1,17 @@
 version: 3
 
+env:
+  ENV: dev
+
 vars:
   ROOT_DIR: ../../..
 
 tasks:
-  build:
+  build-lambda:
     cmds:
-      - find lambda/go -type f -name Taskfile.yml -depth 2 | xargs -n1 dirname | ROOT_DIR=`pwd` xargs -n1 -I DIR task -d DIR build
+      - find lambda/go -type f -name Taskfile.yml -depth 2 | xargs -n1 dirname | ENV={{.ENV}} ROOT_DIR=`pwd` xargs -n1 -I DIR task -d DIR build
+  build-ecs:
+    cmds:
+      - find ecs/go -type f -name Taskfile.yml -depth 2 | xargs -n1 dirname | ENV={{.ENV}} ROOT_DIR=`pwd` xargs -n1 -I DIR task -d DIR build
 
 # explicit list of go lambdas / directories, drop a .lambda file in to mark directory

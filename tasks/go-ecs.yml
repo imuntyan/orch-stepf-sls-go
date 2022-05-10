@@ -1,13 +1,21 @@
 version: '3'
 
+vars:
+  SOURCE_DIR: "{{.ROOT_DIR}}/ecs/go/{{.NAME}}"
+  IMAGE_NAME: "{{.PREFIX}}_{{.NAME}}"
+
 tasks:
   build:
     vars:
-      PACKAGE_NAME: "{{.NAME}}-lambda"
-      SOURCE_DIR: "go/{{.NAME}}"
+      GIT_HASH:
+        sh: git rev-parse HEAD
     cmds:
-      - mkdir -p "{{.ROOT_DIR}}/bin/{{.NAME}}"
-      - GOOS=linux GOARCH=amd64 go build -o "{{.ROOT_DIR}}/bin/{{.NAME}}/handler" main.go
-      - zip -jq "{{.ROOT_DIR}}/bin/{{.NAME}}/handler.zip" "{{.ROOT_DIR}}/bin/{{.NAME}}/handler"
+      - echo "Building Docker image for {{.IMAGE_NAME}} and tagging with 'latest' and '{{.GIT_HASH}}'"
+      - docker build --build-arg ECR_ACCOUNT="{{.ECR_ACCOUNT}}" --build-arg HASH="{{.GIT_HASH}}"  -t {{.IMAGE_NAME}} -f {{.SOURCE_DIR}}/{{.NAME}}.Dockerfile .
+      - aws ecr get-login-password --region us-east-1 --profile "$AWS_PROFILE" | docker login --username AWS --password-stdin "{{.ECR_ACCOUNT}}.dkr.ecr.us-east-1.amazonaws.com"
+      - docker tag "{{.IMAGE_NAME}}" "{{.ECR_ACCOUNT}}.dkr.ecr.us-east-1.amazonaws.com/{{.IMAGE_NAME}}:latest"
+      - docker tag "{{.IMAGE_NAME}}" "{{.ECR_ACCOUNT}}.dkr.ecr.us-east-1.amazonaws.com/{{.IMAGE_NAME}}:{{.GIT_HASH}}"
+      - docker push "{{.ECR_ACCOUNT}}.dkr.ecr.us-east-1.amazonaws.com/{{.IMAGE_NAME}}:latest"
+      - docker push "{{.ECR_ACCOUNT}}.dkr.ecr.us-east-1.amazonaws.com/{{.IMAGE_NAME}}:{{.GIT_HASH}}"
     preconditions:
     - test -d {{.ROOT_DIR}}
