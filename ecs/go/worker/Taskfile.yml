@@ -1,0 +1,13 @@
+version: 3
+
+vars:
+  NAME: worker
+
+includes:
+  go-lambda:
+    taskfile: ../../../tasks/go-ecs.yml
+
+tasks:
+  build:
+    cmds:
+      - task: go-ecs:build

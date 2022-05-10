@@ -1,7 +1,7 @@
 version: 3
 
 vars:
-  NAME: dispatcher
+  NAME: worker
 
 includes:
   go-lambda:

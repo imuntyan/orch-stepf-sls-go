@@ -47,7 +47,7 @@ func Handler(input Input) (Response, error) {
 		Body:            buf.String(),
 		Headers: map[string]string{
 			"Content-Type":           "application/json",
-			"X-MyCompany-Func-Reply": "dispatcher-handler",
+			"X-MyCompany-Func-Reply": "worker-handler",
 		},
 	}
 

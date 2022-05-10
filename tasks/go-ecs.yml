@@ -1,0 +1,13 @@
+version: '3'
+
+tasks:
+  build:
+    vars:
+      PACKAGE_NAME: "{{.NAME}}-lambda"
+      SOURCE_DIR: "go/{{.NAME}}"
+    cmds:
+      - mkdir -p "{{.ROOT_DIR}}/bin/{{.NAME}}"
+      - GOOS=linux GOARCH=amd64 go build -o "{{.ROOT_DIR}}/bin/{{.NAME}}/handler" main.go
+      - zip -jq "{{.ROOT_DIR}}/bin/{{.NAME}}/handler.zip" "{{.ROOT_DIR}}/bin/{{.NAME}}/handler"
+    preconditions:
+    - test -d {{.ROOT_DIR}}

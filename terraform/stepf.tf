@@ -36,7 +36,7 @@ resource "aws_iam_role_policy" "stepf_policy" {
           "lambda:InvokeFunction",
         ]
         Effect   = "Allow"
-        Resource = aws_lambda_function.dispatcher.arn
+        Resource = aws_lambda_function.worker.arn
       },
       {
         "Effect" : "Allow",
@@ -63,7 +63,7 @@ data "local_file" "stepf_helloworld_template" {
 data "template_file" "stef_helloworld_input" {
   template = data.local_file.stepf_helloworld_template.content
   vars     = {
-    hello_fn_arn = aws_lambda_function.dispatcher.arn
+    hello_fn_name = aws_lambda_function.worker.function_name
   }
 }
 

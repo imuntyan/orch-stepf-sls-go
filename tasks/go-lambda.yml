@@ -1,17 +1,12 @@
 version: '3'
 
-vars:
-  DIST: infrastructure/terraform/dist
-  LAMBDA_DIST: "{{.DIST}}/lambda"
-
 tasks:
   build:
     vars:
-      PACKAGE_NAME: "{{.NAME}}-lambda"
-      SOURCE_DIR: "go/{{.NAME}}"
+      OUTPUT_DIR: "{{.ROOT_DIR}}/bin/{{.NAME}}"
     cmds:
-      - mkdir -p "{{.ROOT_DIR}}/bin/{{.NAME}}"
-      - GOOS=linux GOARCH=amd64 go build -o "{{.ROOT_DIR}}/bin/{{.NAME}}/handler" main.go
-      - zip -jq "{{.ROOT_DIR}}/bin/{{.NAME}}/handler.zip" "{{.ROOT_DIR}}/bin/{{.NAME}}/handler"
+      - mkdir -p "{{.OUTPUT_DIR}}"
+      - GOOS=linux GOARCH=amd64 go build -o "{{.OUTPUT_DIR}}/handler" main.go
+      - zip -jq "{{.OUTPUT_DIR}}/handler.zip" "{{.OUTPUT_DIR}}/handler"
     preconditions:
     - test -d {{.ROOT_DIR}}

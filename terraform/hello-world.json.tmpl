@@ -4,10 +4,13 @@
   "States": {
     "HelloWorld": {
       "Type": "Task",
-      "Resource": ${jsonencode(hello_fn_arn)},
+      "Resource": "arn:aws:states:::lambda:invoke",
       "Parameters": {
-        "stage.$": "$.stage",
-        "failStages.$": "$.failStages"
+        "FunctionName": ${jsonencode(hello_fn_name)},
+        "Payload": {
+          "stage.$": "$.stage",
+          "failStages.$": "$.failStages"
+        }
       },
       "End": true
     }
