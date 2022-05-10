@@ -1,10 +1,7 @@
-data "aws_region" "current" {}
-
-data "aws_caller_identity" "current" {}
-
+variable "prefix" {}
 
 resource "aws_iam_role" "stepf_role" {
-  name = "poc-stepf-statemachine-role"
+  name = "${var.prefix}_statemachine_role"
 
   assume_role_policy = jsonencode({
     Version   = "2012-10-17"
@@ -26,7 +23,7 @@ resource "aws_iam_role" "stepf_role" {
 }
 
 resource "aws_iam_role_policy" "stepf_policy" {
-  name = "stepf_policy"
+  name = "${var.prefix}_statemachine_policy"
   role = aws_iam_role.stepf_role.id
 
   # Terraform's "jsonencode" function converts a
@@ -39,7 +36,7 @@ resource "aws_iam_role_policy" "stepf_policy" {
           "lambda:InvokeFunction",
         ]
         Effect   = "Allow"
-        Resource = "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:poc-stepf-igor-hello"
+        Resource = aws_lambda_function.dispatcher.arn
       },
       {
         "Effect" : "Allow",
@@ -59,14 +56,6 @@ resource "aws_iam_role_policy" "stepf_policy" {
   })
 }
 
-data "aws_lambda_function" "stepf_lambda" {
-  function_name = "poc-stepf-igor-hello"
-}
-
-data "aws_cloudwatch_log_group" "stepf_lambda_log" {
-  name = "/aws/lambda/poc-stepf-igor-hello"
-}
-
 data "local_file" "stepf_helloworld_template" {
   filename = "hello-world.json.tmpl"
 }
@@ -74,12 +63,12 @@ data "local_file" "stepf_helloworld_template" {
 data "template_file" "stef_helloworld_input" {
   template = data.local_file.stepf_helloworld_template.content
   vars     = {
-    hello_fn_arn = data.aws_lambda_function.stepf_lambda.arn
+    hello_fn_arn = aws_lambda_function.dispatcher.arn
   }
 }
 
 resource "aws_sfn_state_machine" "sfn_state_machine" {
-  name     = "my-state-machine"
+  name     = "${var.prefix}_statemachine"
   role_arn = aws_iam_role.stepf_role.arn
 
   definition = data.template_file.stef_helloworld_input.rendered

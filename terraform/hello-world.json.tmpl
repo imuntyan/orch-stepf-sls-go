@@ -5,6 +5,10 @@
     "HelloWorld": {
       "Type": "Task",
       "Resource": ${jsonencode(hello_fn_arn)},
+      "Parameters": {
+        "stage.$": "$.stage",
+        "failStages.$": "$.failStages"
+      },
       "End": true
     }
   }

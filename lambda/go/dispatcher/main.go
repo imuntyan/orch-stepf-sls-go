@@ -2,8 +2,9 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
+	"fmt"
+	"github.com/pkg/errors"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -15,15 +16,28 @@ import (
 // https://serverless.com/framework/docs/providers/aws/events/apigateway/#lambda-proxy-integration
 type Response events.APIGatewayProxyResponse
 
-// Handler is our lambda handler invoked by the `lambda.Start` function call
-func Handler(ctx context.Context) (Response, error) {
+type Input struct {
+	Stage      string   `json:"stage"`
+	FailStages []string `json:"failStages"`
+}
+
+func Handler(input Input) (Response, error) {
 	var buf bytes.Buffer
 
+	for _, f := range input.FailStages {
+		if f == input.Stage {
+			return Response{
+				StatusCode: 500,
+			}, errors.Errorf("stage %s failed", input.Stage)
+		}
+	}
+
+	message := fmt.Sprintf("stage %s succeeded", input.Stage)
 	body, err := json.Marshal(map[string]interface{}{
-		"message": "Go Serverless v1.0! Your function executed successfully!",
+		"message": message,
 	})
 	if err != nil {
-		return Response{StatusCode: 404}, err
+		return Response{StatusCode: 500}, err
 	}
 	json.HTMLEscape(&buf, body)
 
@@ -33,7 +47,7 @@ func Handler(ctx context.Context) (Response, error) {
 		Body:            buf.String(),
 		Headers: map[string]string{
 			"Content-Type":           "application/json",
-			"X-MyCompany-Func-Reply": "hello-handler",
+			"X-MyCompany-Func-Reply": "dispatcher-handler",
 		},
 	}
 

@@ -10,8 +10,9 @@ tasks:
       PACKAGE_NAME: "{{.NAME}}-lambda"
       SOURCE_DIR: "go/{{.NAME}}"
     cmds:
-      - mkdir -p "{{.ROOT_DIR}}/bin"
-      - GOOS=linux go build -o "{{.ROOT_DIR}}/bin/{{.NAME}}" main.go
+      - mkdir -p "{{.ROOT_DIR}}/bin/{{.NAME}}"
+      - GOOS=linux GOARCH=amd64 go build -o "{{.ROOT_DIR}}/bin/{{.NAME}}/handler" main.go
+      - zip -jq "{{.ROOT_DIR}}/bin/{{.NAME}}/handler.zip" "{{.ROOT_DIR}}/bin/{{.NAME}}/handler"
 #      - task: package
 #        vars:
 #          NAME: "{{.NAME}}"
