@@ -83,7 +83,7 @@ resource "aws_iam_role_policy" "ecs_execution" {
           "logs:PutLogEvents",
         ]
         Effect   = "Allow"
-        Resource = aws_cloudwatch_log_group.worker.arn
+        Resource = "${aws_cloudwatch_log_group.worker.arn}:*"
       },
     ]
   })
@@ -119,6 +119,15 @@ resource "aws_ecs_task_definition" "app" {
       name      = "${var.prefix}_worker"
       image     = "${aws_ecr_repository.worker.repository_url}:latest"
       essential = true
+      networkMode = "awsvpc"
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group = aws_cloudwatch_log_group.worker.name
+          awslogs-region = data.aws_region.current.name
+          awslogs-stream-prefix = "ecs"
+        }
+      }
     },
   ])
   execution_role_arn = aws_iam_role.ecs_execution.arn
