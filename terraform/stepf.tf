@@ -34,10 +34,48 @@ resource "aws_iam_role_policy" "stepf_policy" {
     Statement = [
       {
         Action = [
+          "iam:PassRole",
+        ]
+        Effect   = "Allow"
+        Resource = [
+          aws_iam_role.ecs_execution.arn,
+          aws_iam_role.ecs_task.arn,
+        ]
+      },
+      {
+        Action = [
           "lambda:InvokeFunction",
         ]
         Effect   = "Allow"
         Resource = aws_lambda_function.worker.arn
+      },
+      {
+        "Effect": "Allow",
+        "Action": [
+          "ecs:RunTask"
+        ],
+        "Resource": [
+          "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:task-definition/*"
+        ]
+      },
+      {
+        "Effect": "Allow",
+        "Action": [
+          "ecs:StopTask",
+          "ecs:DescribeTasks"
+        ],
+        "Resource": "*"
+      },
+      {
+        "Effect": "Allow",
+        "Action": [
+          "events:PutTargets",
+          "events:PutRule",
+          "events:DescribeRule"
+        ],
+        "Resource": [
+          "arn:aws:events:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:rule/StepFunctionsGetEventsForECSTaskRule"
+        ]
       },
       {
         "Effect" : "Allow",
@@ -58,13 +96,16 @@ resource "aws_iam_role_policy" "stepf_policy" {
 }
 
 data "local_file" "stepf_helloworld_template" {
-  filename = "hello-world.json.tmpl"
+  filename = "hello-world.json"
 }
 
 data "template_file" "stef_helloworld_input" {
   template = data.local_file.stepf_helloworld_template.content
   vars     = {
-    hello_fn_name = aws_lambda_function.worker.function_name
+    region = data.aws_region.current.name
+    account_id = data.aws_caller_identity.current.account_id
+    prefix = var.prefix
+    subnet = var.AWS_SUBNET
   }
 }
 

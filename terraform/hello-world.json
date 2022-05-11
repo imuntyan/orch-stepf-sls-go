@@ -1,0 +1,53 @@
+{
+  "Comment": "A Hello World example of the Amazon States Language using an AWS Lambda Function",
+  "StartAt": "Lambda-C01",
+  "States": {
+    "Lambda-C01": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${prefix}_worker",
+        "Payload": {
+          "stage": "Lambda-C01",
+          "failStages.$": "$.failStages"
+        }
+      },
+      "ResultPath": null,
+      "Next": "ECS-C02"
+    },
+    "ECS-C02": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::ecs:runTask.sync",
+      "Parameters": {
+        "LaunchType": "FARGATE",
+        "Cluster": "arn:aws:ecs:${region}:${account_id}:cluster/${prefix}_worker",
+        "TaskDefinition": "${prefix}_worker",
+        "PlatformVersion": "LATEST",
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "Subnets": ["${subnet}"]
+          }
+        },
+        "Overrides": {
+          "ContainerOverrides": [
+            {
+              "Name": "${prefix}_worker",
+              "Environment": [
+                {
+                  "Name": "stage",
+                  "Value": "ECS-C02"
+                },
+                {
+                  "Name": "failStages",
+                  "Value.$": "States.JsonToString($.failStages)"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "ResultPath": null,
+      "End": true
+    }
+  }
+}
