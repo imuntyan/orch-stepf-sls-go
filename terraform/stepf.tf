@@ -1,4 +1,5 @@
 variable "prefix" {}
+variable "AWS_SUBNET" {}
 
 resource "aws_iam_role" "stepf_role" {
   name = "${var.prefix}_statemachine_role"
