@@ -118,6 +118,12 @@ resource "aws_ecs_task_definition" "app" {
     {
       name      = "${var.prefix}_worker"
       image     = "${aws_ecr_repository.worker.repository_url}:latest"
+      environment = [
+        {
+          name = "COMMON_ENV_VAR"
+          value = "COMMON_ENV_VAR_VALUE"
+        }
+      ]
       essential = true
       networkMode = "awsvpc"
       logConfiguration = {

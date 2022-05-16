@@ -50,6 +50,8 @@ resource "aws_lambda_function" "worker" {
 
   runtime = "go1.x"
 
+  timeout = 120
+
 #  environment {
 #    variables = {
 #      foo = "bar"

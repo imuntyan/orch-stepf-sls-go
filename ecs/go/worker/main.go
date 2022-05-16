@@ -16,6 +16,10 @@ func main() {
 	if !ok {
 		log.Fatal(errors.New("no stage env var"))
 	}
+	_, ok = os.LookupEnv("COMMON_ENV_VAR")
+	if !ok {
+		log.Fatal(errors.New("no COMMON_ENV_VAR env var"))
+	}
 
 	failStages := make([]string, 0)
 	if err := json.Unmarshal([]byte(failStagesEnv), &failStages); err != nil {

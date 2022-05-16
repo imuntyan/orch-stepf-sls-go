@@ -1,21 +1,37 @@
 {
   "Comment": "A Hello World example of the Amazon States Language using an AWS Lambda Function",
-  "StartAt": "Lambda-C01",
+  "StartAt": "Lambda_01_Sync",
   "States": {
-    "Lambda-C01": {
+    "Lambda_01_Sync": {
       "Type": "Task",
       "Resource": "arn:aws:states:::lambda:invoke",
       "Parameters": {
         "FunctionName": "${prefix}_worker",
         "Payload": {
-          "stage": "Lambda-C01",
+          "stage": "Lambda_01_Sync",
+          "waitSeconds": 2,
           "failStages.$": "$.failStages"
         }
       },
       "ResultPath": null,
-      "Next": "ECS-C02"
+      "Next": "Lambda_02_Async"
     },
-    "ECS-C02": {
+    "Lambda_02_Async": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${prefix}_worker",
+        "InvocationType": "Event",
+        "Payload": {
+          "stage": "Lambda_02_Async",
+          "waitSeconds": 5,
+          "failStages.$": "$.failStages"
+        }
+      },
+      "ResultPath": null,
+      "Next": "ECS_01_Sync"
+    },
+    "ECS_01_Sync": {
       "Type": "Task",
       "Resource": "arn:aws:states:::ecs:runTask.sync",
       "Parameters": {
@@ -35,7 +51,41 @@
               "Environment": [
                 {
                   "Name": "stage",
-                  "Value": "ECS-C02"
+                  "Value": "ECS_01_Sync"
+                },
+                {
+                  "Name": "failStages",
+                  "Value.$": "States.JsonToString($.failStages)"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "ResultPath": null,
+      "Next": "ECS_02_Async"
+    },
+    "ECS_02_Async": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::ecs:runTask",
+      "Parameters": {
+        "LaunchType": "FARGATE",
+        "Cluster": "arn:aws:ecs:${region}:${account_id}:cluster/${prefix}_worker",
+        "TaskDefinition": "${prefix}_worker",
+        "PlatformVersion": "LATEST",
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "Subnets": ["${subnet}"]
+          }
+        },
+        "Overrides": {
+          "ContainerOverrides": [
+            {
+              "Name": "${prefix}_worker",
+              "Environment": [
+                {
+                  "Name": "stage",
+                  "Value": "ECS_02_Async"
                 },
                 {
                   "Name": "failStages",
@@ -49,5 +99,6 @@
       "ResultPath": null,
       "End": true
     }
+
   }
 }

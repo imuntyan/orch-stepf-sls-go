@@ -95,12 +95,12 @@ resource "aws_iam_role_policy" "stepf_policy" {
   })
 }
 
-data "local_file" "stepf_helloworld_template" {
-  filename = "hello-world.json"
+data "local_file" "stepf_pipeline_template" {
+  filename = "pipeline.json"
 }
 
-data "template_file" "stef_helloworld_input" {
-  template = data.local_file.stepf_helloworld_template.content
+data "template_file" "stef_pipeline_input" {
+  template = data.local_file.stepf_pipeline_template.content
   vars     = {
     region = data.aws_region.current.name
     account_id = data.aws_caller_identity.current.account_id
@@ -113,7 +113,7 @@ resource "aws_sfn_state_machine" "sfn_state_machine" {
   name     = "${var.prefix}_statemachine"
   role_arn = aws_iam_role.stepf_role.arn
 
-  definition = data.template_file.stef_helloworld_input.rendered
+  definition = data.template_file.stef_pipeline_input.rendered
 
 #  logging_configuration {
 #    log_destination        = "${data.aws_cloudwatch_log_group.stepf_lambda_log.arn}:*"

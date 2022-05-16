@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/pkg/errors"
+	"time"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -17,19 +18,17 @@ import (
 type Response events.APIGatewayProxyResponse
 
 type Input struct {
-	Stage      string   `json:"stage"`
-	FailStages []string `json:"failStages"`
+	Stage       string   `json:"stage"`
+	WaitSeconds int      `json:"waitSeconds"`
+	FailStages  []string `json:"failStages"`
 }
 
 func Handler(input Input) (Response, error) {
-	var buf bytes.Buffer
-
-	for _, f := range input.FailStages {
-		if f == input.Stage {
-			return Response{
-				StatusCode: 500,
-			}, errors.Errorf("stage %s failed", input.Stage)
-		}
+	if err := sleep(input); err != nil {
+		return Response{StatusCode: 500}, err
+	}
+	if err := simulateFailure(input); err != nil {
+		return Response{StatusCode: 500}, err
 	}
 
 	message := fmt.Sprintf("stage %s succeeded", input.Stage)
@@ -39,6 +38,8 @@ func Handler(input Input) (Response, error) {
 	if err != nil {
 		return Response{StatusCode: 500}, err
 	}
+
+	var buf bytes.Buffer
 	json.HTMLEscape(&buf, body)
 
 	resp := Response{
@@ -52,6 +53,23 @@ func Handler(input Input) (Response, error) {
 	}
 
 	return resp, nil
+}
+
+func sleep(input Input) error {
+	if input.WaitSeconds > 120 {
+		return errors.Errorf("invalid wait value: %d", input.WaitSeconds)
+	}
+	time.Sleep(time.Duration(input.WaitSeconds) * time.Second)
+	return nil
+}
+
+func simulateFailure(input Input) error {
+	for _, f := range input.FailStages {
+		if f == input.Stage {
+			return errors.Errorf("stage %s failed", input.Stage)
+		}
+	}
+	return nil
 }
 
 func main() {

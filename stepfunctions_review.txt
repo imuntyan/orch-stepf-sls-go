@@ -1,0 +1,14 @@
+Pros:
+- Optimized integrations with AWS services:
+https://docs.aws.amazon.com/step-functions/latest/dg/connect-supported-services.html
+The lambdas and ECS tasks do not need to be aware of the pipeline they are part of.
+- Support for the sync and async lambda executions.
+- Support for the sync executions of the ECS service.
+
+
+Cons:
+
+- Does not build the execution graph as e.g. the circleci (with 'require' tags). Instead, the next
+execution step must be specified explicitly.
+
+- ECS task requires passing the configuration - that is a lot of information
