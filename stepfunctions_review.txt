@@ -16,3 +16,52 @@ execution step must be specified explicitly.
 - It is not possible to pass values back to the pipeline from an ECS task without using .waitForTaskToken
 (https://docs.aws.amazon.com/step-functions/latest/dg/connect-to-resource.html#connect-wait-token) that makes
 the ECS task pipeline-aware
+
+
+
+Features:
+
+1. Framework-agnostic
+
+Works for lambda invocations. Works for ECS invocations, but only if the ECS tasks do not need to pass the values
+back to the pipeline. If they do, they need to accept the Step Function Task Token and invoke the AWS API when
+complete: https://docs.aws.amazon.com/step-functions/latest/apireference/API_SendTaskSuccess.html
+
+2. Stopping the pipeline
+
+Stopping the pipeline is easy with AS API
+https://docs.aws.amazon.com/step-functions/latest/apireference/API_StopExecution.html
+
+3. Ease of development
+
+Changing the pipeline requires good understanding of the Step Function language. The pipeline definition is quite
+verbose. For ECS tasks, it requires specifying parameters such as network configuration.
+
+4. Avoid overlapping pipeline runs
+
+Step function executions are not dependent on each other, and therefore the overlapping executions are possible.
+
+If the requirement is to fail the newer overlapping executions then it is possible to implement the first pipeline stage
+as a synchronous lambda invocation that checks the running executions:
+https://docs.aws.amazon.com/step-functions/latest/apireference/API_ListExecutions.html.
+
+If the requirement is to delay the newer overlapping execution then we need to implement some locking solution.
+(checking and blocking on https://docs.aws.amazon.com/step-functions/latest/apireference/API_ListExecutions.html
+wouldn't work as there could be multiple waiting executions, and that would introduce the ordering and race condition
+issues)
+
+5. Tracking history
+
+The executions can be listed with
+https://docs.aws.amazon.com/step-functions/latest/apireference/API_ListExecutions.html
+
+This returns the start/stop dates and status for each executions
+
+The execution detail can be retrieved with
+https://docs.aws.amazon.com/step-functions/latest/apireference/API_GetExecutionHistory.html
+
+6. Stage retries
+
+Retrying a pipeline from a specific stage requires creating a new temporary step function state machine.
+The approach is described in https://aws.amazon.com/blogs/compute/resume-aws-step-functions-from-any-state/
+
