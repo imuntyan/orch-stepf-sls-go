@@ -4,6 +4,8 @@
   "States": {
     "Lambda_01_Sync": {
       "Type": "Task",
+      "Next": "Lambda_02_Async",
+      "ResultPath": "$._previousStageOutput",
       "Resource": "arn:aws:states:::lambda:invoke",
       "Parameters": {
         "FunctionName": "${prefix}_worker",
@@ -12,12 +14,12 @@
           "waitSeconds": 2,
           "failStages.$": "$.failStages"
         }
-      },
-      "ResultPath": null,
-      "Next": "Lambda_02_Async"
+      }
     },
     "Lambda_02_Async": {
       "Type": "Task",
+      "Next": "ECS_01_Sync",
+      "ResultPath": "$._previousStageOutput",
       "Resource": "arn:aws:states:::lambda:invoke",
       "Parameters": {
         "FunctionName": "${prefix}_worker",
@@ -27,12 +29,12 @@
           "waitSeconds": 5,
           "failStages.$": "$.failStages"
         }
-      },
-      "ResultPath": null,
-      "Next": "ECS_01_Sync"
+      }
     },
     "ECS_01_Sync": {
       "Type": "Task",
+      "Next": "ECS_02_Async",
+      "ResultPath": "$._previousStageOutput",
       "Resource": "arn:aws:states:::ecs:runTask.sync",
       "Parameters": {
         "LaunchType": "FARGATE",
@@ -61,12 +63,12 @@
             }
           ]
         }
-      },
-      "ResultPath": null,
-      "Next": "ECS_02_Async"
+      }
     },
     "ECS_02_Async": {
       "Type": "Task",
+      "Next": "FanOut_01",
+      "ResultPath": "$._previousStageOutput",
       "Resource": "arn:aws:states:::ecs:runTask",
       "Parameters": {
         "LaunchType": "FARGATE",
@@ -95,10 +97,140 @@
             }
           ]
         }
-      },
-      "ResultPath": null,
-      "End": true
+      }
+    },
+    "FanOut_01": {
+      "Type": "Parallel",
+      "Next": "Lambda_05_Sync",
+      "ResultPath": "$._previousStageOutput",
+      "Branches": [
+        {
+          "StartAt": "Lambda_03_Sync",
+          "States": {
+            "Lambda_03_Sync": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "FunctionName": "${prefix}_worker",
+                "Payload": {
+                  "stage": "Lambda_03_Sync",
+                  "waitSeconds": 2,
+                  "failStages.$": "$.failStages"
+                }
+              },
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "Lambda_04_Async",
+          "States": {
+            "Lambda_04_Async": {
+              "Type": "Task",
+              "End": true,
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "FunctionName": "${prefix}_worker",
+                "InvocationType": "Event",
+                "Payload": {
+                  "stage": "Lambda_04_Async",
+                  "waitSeconds": 5,
+                  "failStages.$": "$.failStages"
+                }
+              }
+            }
+          }
+        },
+        {
+          "StartAt": "ECS_03_Sync",
+          "States": {
+            "ECS_03_Sync": {
+              "Type": "Task",
+              "End": true,
+              "Resource": "arn:aws:states:::ecs:runTask.sync",
+              "Parameters": {
+                "LaunchType": "FARGATE",
+                "Cluster": "arn:aws:ecs:${region}:${account_id}:cluster/${prefix}_worker",
+                "TaskDefinition": "${prefix}_worker",
+                "PlatformVersion": "LATEST",
+                "NetworkConfiguration": {
+                  "AwsvpcConfiguration": {
+                    "Subnets": ["${subnet}"]
+                  }
+                },
+                "Overrides": {
+                  "ContainerOverrides": [
+                    {
+                      "Name": "${prefix}_worker",
+                      "Environment": [
+                        {
+                          "Name": "stage",
+                          "Value": "ECS_03_Sync"
+                        },
+                        {
+                          "Name": "failStages",
+                          "Value.$": "States.JsonToString($.failStages)"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "StartAt": "ECS_04_Async",
+          "States": {
+            "ECS_04_Async": {
+              "Type": "Task",
+              "End": true,
+              "Resource": "arn:aws:states:::ecs:runTask",
+              "Parameters": {
+                "LaunchType": "FARGATE",
+                "Cluster": "arn:aws:ecs:${region}:${account_id}:cluster/${prefix}_worker",
+                "TaskDefinition": "${prefix}_worker",
+                "PlatformVersion": "LATEST",
+                "NetworkConfiguration": {
+                  "AwsvpcConfiguration": {
+                    "Subnets": ["${subnet}"]
+                  }
+                },
+                "Overrides": {
+                  "ContainerOverrides": [
+                    {
+                      "Name": "${prefix}_worker",
+                      "Environment": [
+                        {
+                          "Name": "stage",
+                          "Value": "ECS_04_Async"
+                        },
+                        {
+                          "Name": "failStages",
+                          "Value.$": "States.JsonToString($.failStages)"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "Lambda_05_Sync": {
+      "Type": "Task",
+      "End": true,
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${prefix}_worker",
+        "Payload": {
+          "stage": "Lambda_05_Sync",
+          "waitSeconds": 2,
+          "failStages.$": "$.failStages"
+        }
+      }
     }
-
   }
 }
