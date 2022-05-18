@@ -65,3 +65,16 @@ https://docs.aws.amazon.com/step-functions/latest/apireference/API_GetExecutionH
 Retrying a pipeline from a specific stage requires creating a new temporary step function state machine.
 The approach is described in https://aws.amazon.com/blogs/compute/resume-aws-step-functions-from-any-state/
 
+7. Cost
+
+cost base: $0.025 / 1000 state transition
+
+35 accounts
+7 pipelines / account / day
+35 stages / pipeline
+6 state transitions / stage (syncronous ECS)
+
+35 accounts * 7 pipelines / account / day * 35 stages / pipeline * 6 state transitions / stage =
+51450 state transitions / day
+
+51450 state transitions / day * $0.025 / 1000 state transition = $1.29 / day
